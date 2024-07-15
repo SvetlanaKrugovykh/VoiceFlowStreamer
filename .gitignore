@@ -13,4 +13,5 @@ third_party
 assets
 venv
 uploads
-*.wav
+output
+__pycache__

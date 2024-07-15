@@ -1,3 +1,4 @@
+# src/audio_recorder.py
 import pyaudio
 import numpy as np
 import wave
@@ -16,6 +17,10 @@ class AudioRecorder:
         self.frames = []
         self.silence_frames = deque(maxlen=int(self.silence_limit * self.rate / self.chunk))
 
+        output_path = os.getenv('OUTPUT_PATH', 'output')
+        if output_path:
+          self.output_filename = os.path.join(output_path, self.output_filename)
+        
     def is_silence(self, snd_data):
         """Check if the given audio chunk is silence."""
         return max(snd_data) < 500  # Adjust this threshold based on your microphone sensitivity
