@@ -13,4 +13,4 @@ third_party
 assets
 venv
 uploads
-.vscode
+*.wav
