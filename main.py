@@ -12,17 +12,16 @@ def main():
 
     recorder = AudioRecorder()
     sender = AudioSender(server_url)
+    segment_pause_sec = round(float(os.getenv('SEGMENT_PAUSE_SEC')), 1)
 
     try:
         while True:
             audio_file = recorder.record_segment()
-            if os.path.getsize(audio_file) > 0: 
+            if audio_file and os.path.getsize(audio_file) > 0:
                 segment_number += 1
                 status = sender.send_audio(audio_file, segment_number)
                 print(f"Segment {segment_number} sent, status: {status}")
-            else:
-                print("Recorded segment is empty, skipping...")
-            segment_pause_sec = round(float(os.getenv('SEGMENT_PAUSE_SEC')), 1)
+
             time.sleep(segment_pause_sec)  # Wait for a X second before recording the next segment
     except KeyboardInterrupt:
         print("Recording stopped")

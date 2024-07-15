@@ -28,50 +28,49 @@ class AudioRecorder:
     def record_segment(self):
         print("Preparing to record...")
         self.frames = []
-        stream = self.audio.open(format=self.format, channels=self.channels, rate=self.rate, input=True, frames_per_buffer=self.chunk)
-        is_speaking = False
-        start_time = time.time()
-        max_wait_time = int(os.getenv("MAX_WAIT_TIME_SEC", 30))
+        self.silence_frames.clear()  # Ensure silence_frames is cleared at the start
+        if not 8000 <= self.rate <= 48000:
+          raise ValueError(f"Rate {self.rate} is out of acceptable range (8000-48000)")
 
-        while not is_speaking and (time.time() - start_time) < max_wait_time:
+        print('self.rate', self.rate)
+        stream = self.audio.open(format=self.format, channels=self.channels, rate=self.rate, input=True, frames_per_buffer=self.chunk)
+        is_speech_detected = False
+
+        while True:
             data = stream.read(self.chunk, exception_on_overflow=False)
             snd_data = np.frombuffer(data, dtype=np.int16)
             if not self.is_silence(snd_data):
-                is_speaking = True
-
-        if not is_speaking:
-            print("No speech detected within the wait time.")
-            stream.stop_stream()
-            stream.close()
-            return None
-
-        print("Recording segment...")
-
-        while True:
-            data = stream.read(self.chunk)
-            snd_data = np.frombuffer(data, dtype=np.int16)
-            if self.is_silence(snd_data) and is_speaking:
-                self.silence_frames.append(1)
-                if len(self.silence_frames) == self.silence_frames.maxlen:
-                    break
-            else:
-                self.silence_frames.clear()
-                is_speaking = True
+                if not is_speech_detected:
+                    print("Recording segment...")
+                is_speech_detected = True
                 self.frames.append(data)
-        
+                self.silence_frames.clear()  # Clear silence_frames since speech is detected
+            else:
+                if is_speech_detected:
+                    # If speech was detected and now silence is detected, add to silence_frames
+                    self.silence_frames.append(1)
+                    if len(self.silence_frames) == self.silence_frames.maxlen:
+                        # If continuous silence for the duration of silence_limit, stop recording
+                        break
+                # else:
+                    # print("Waiting for speech...")
+            
         stream.stop_stream()
         stream.close()
 
-        output_filename = f"{self.output_filename}"
-        wf = wave.open(output_filename, 'wb')
-        wf.setnchannels(self.channels)
-        wf.setsampwidth(self.audio.get_sample_size(self.format))
-        wf.setframerate(self.rate)
-        wf.writeframes(b''.join(self.frames))
-        wf.close()
-
-        print("Segment recorded.")
-        return output_filename
+        if self.frames:
+            output_filename = f"{self.output_filename}"
+            wf = wave.open(output_filename, 'wb')
+            wf.setnchannels(self.channels)
+            wf.setsampwidth(self.audio.get_sample_size(self.format))
+            wf.setframerate(self.rate)
+            wf.writeframes(b''.join(self.frames))
+            wf.close()
+            print("Segment recorded.")
+            return output_filename
+        else:
+            print("No speech detected.")
+            return None
 
 if __name__ == "__main__":
     recorder = AudioRecorder()
