@@ -1,0 +1,16 @@
+keys
+data
+path
+node_modules
+temp
+.env*
+.vscode
+.idea
+.eslint*
+build
+python-env
+third_party
+assets
+venv
+uploads
+.vscode

@@ -1,0 +1,7 @@
+pyaudio
+requests
+sounddevice
+numpy
+scipy
+python-dotenv
+
