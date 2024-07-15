@@ -6,7 +6,7 @@ import os, time
 from collections import deque
 
 class AudioRecorder:
-    def __init__(self, channels=1, rate=16000, chunk=1024, silence_limit=1, output_filename="output.wav"):
+    def __init__(self, channels=1, rate=16000, chunk=1024, silence_limit=1, output_filename="output.wav", post_silence_buffer=0.5):
         self.format = pyaudio.paInt16
         self.channels = channels
         self.rate = rate
@@ -16,6 +16,8 @@ class AudioRecorder:
         self.audio = pyaudio.PyAudio()
         self.frames = []
         self.silence_frames = deque(maxlen=int(self.silence_limit * self.rate / self.chunk))
+        self.post_silence_buffer = post_silence_buffer  # Buffer time in seconds after detecting silence
+
 
         output_path = os.getenv('OUTPUT_PATH', 'output')
         if output_path:
@@ -27,6 +29,8 @@ class AudioRecorder:
 
     def record_segment(self):
         print("Preparing to record...")
+        post_silence_chunks = int(self.post_silence_buffer * self.rate / self.chunk)
+        silence_counter = 0        
         self.frames = []
         self.silence_frames.clear()  # Ensure silence_frames is cleared at the start
         if not 8000 <= self.rate <= 48000:
@@ -49,11 +53,12 @@ class AudioRecorder:
                 if is_speech_detected:
                     # If speech was detected and now silence is detected, add to silence_frames
                     self.silence_frames.append(1)
+                    silence_counter += 1
                     if len(self.silence_frames) == self.silence_frames.maxlen:
                         # If continuous silence for the duration of silence_limit, stop recording
                         break
-                # else:
-                    # print("Waiting for speech...")
+                    else:
+                        self.frames.append(data)  # Continue recording into the buffer period
             
         stream.stop_stream()
         stream.close()
