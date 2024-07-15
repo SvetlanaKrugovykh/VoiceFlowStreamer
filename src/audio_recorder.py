@@ -1,6 +1,7 @@
 import pyaudio
 import numpy as np
 import wave
+import os, time
 from collections import deque
 
 class AudioRecorder:
@@ -20,11 +21,27 @@ class AudioRecorder:
         return max(snd_data) < 500  # Adjust this threshold based on your microphone sensitivity
 
     def record_segment(self):
-        """Record a segment of audio, stopping after a period of silence."""
-        print("Recording segment...")
+        print("Preparing to record...")
         self.frames = []
         stream = self.audio.open(format=self.format, channels=self.channels, rate=self.rate, input=True, frames_per_buffer=self.chunk)
         is_speaking = False
+        start_time = time.time()
+        max_wait_time = int(os.getenv("MAX_WAIT_TIME_SEC", 30))
+
+        while not is_speaking and (time.time() - start_time) < max_wait_time:
+            data = stream.read(self.chunk, exception_on_overflow=False)
+            snd_data = np.frombuffer(data, dtype=np.int16)
+            if not self.is_silence(snd_data):
+                is_speaking = True
+
+        if not is_speaking:
+            print("No speech detected within the wait time.")
+            stream.stop_stream()
+            stream.close()
+            return None
+
+        print("Recording segment...")
+
         while True:
             data = stream.read(self.chunk)
             snd_data = np.frombuffer(data, dtype=np.int16)
@@ -36,11 +53,10 @@ class AudioRecorder:
                 self.silence_frames.clear()
                 is_speaking = True
                 self.frames.append(data)
-
+        
         stream.stop_stream()
         stream.close()
 
-        # Save the recorded segment to a file
         output_filename = f"{self.output_filename}"
         wf = wave.open(output_filename, 'wb')
         wf.setnchannels(self.channels)
