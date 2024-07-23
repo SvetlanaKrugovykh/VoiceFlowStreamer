@@ -6,7 +6,7 @@ import os, time
 from collections import deque
 
 class AudioRecorder:
-    def __init__(self, channels=1, rate=16000, chunk=1024, silence_limit=1, output_filename="output.wav", post_silence_buffer=0.5):
+    def __init__(self, channels=1, rate=16000, chunk=1024, silence_limit=3, output_filename="output.wav", post_silence_buffer=0.5):
         self.format = pyaudio.paInt16
         self.channels = channels
         self.rate = rate

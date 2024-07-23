@@ -10,7 +10,7 @@ def main():
     server_url = os.getenv('SERVER_URL')
     segment_number = 0
 
-    recorder = AudioRecorder()
+    recorder = AudioRecorder(rate=44100, channels=1)
     sender = AudioSender(server_url)
     segment_pause_sec = round(float(os.getenv('SEGMENT_PAUSE_SEC')), 1)
 
