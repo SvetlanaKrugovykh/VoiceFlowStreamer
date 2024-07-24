@@ -15,7 +15,8 @@ class AudioSender:
             files = {'file': file}
             data = {'segment': segment_number}
             AUTHORIZATION = os.getenv('AUTHORIZATION')
-            response = requests.post(self.server_url, files=files, data=data, headers={'Authorization': AUTHORIZATION}, verify=False)
+            prod_mode = int(os.getenv('PROD_MODE'))
+            response = requests.post(self.server_url, files=files, data=data, headers={'Authorization': AUTHORIZATION}, verify=prod_mode)
         try:
             response_json = response.json()
             if response.status_code == 200:
