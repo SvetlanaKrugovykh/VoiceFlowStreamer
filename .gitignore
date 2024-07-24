@@ -16,3 +16,5 @@ uploads
 output
 __pycache__
 *.log
+*312.pyc
+*.pyc
