@@ -2,7 +2,10 @@
 import logging
 from dotenv import load_dotenv
 import os
+import urllib3
 import requests
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class AudioSender:
     def __init__(self, server_url):
