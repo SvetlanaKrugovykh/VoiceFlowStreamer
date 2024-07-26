@@ -37,7 +37,9 @@ class AudioSender:
                 data.add_field('file', file, filename=os.path.basename(file_path))
                 data.add_field('segment', str(segment_number))
                 async with session.post(self.server_url, data=data, headers={'Authorization': AUTHORIZATION}) as response:
-                    self.logger.info(f"Status Code: {response.status}")
+                    status_code = response.status
+                    if status_code != 200:
+                        self.logger.info(f"Status Code: {status_code}")
 
                     try:
                         print(f"Segment {segment_number} sent asynchronously")
