@@ -20,6 +20,12 @@ class AudioSender:
     async def send_audio(self, file_path, segment_number):
         AUTHORIZATION = os.getenv('AUTHORIZATION')
         prod_mode = int(os.getenv('PROD_MODE'))
+        serviceId = os.getenv('SERVICE_ID')
+        clientId = os.getenv('CLIENT_ID')
+        
+        if (AUTHORIZATION is None) or (serviceId is None) or (clientId is None):
+            self.logger.error("Missing environment variables")
+            return 400
         
         # Create an SSL context to disable SSL verification if prod_mode is 0
         if prod_mode == 0:
@@ -34,6 +40,9 @@ class AudioSender:
         async with aiohttp.ClientSession(connector=connector) as session:
             with open(file_path, 'rb') as file:
                 data = aiohttp.FormData()
+                data.add_field('serviceId', serviceId)
+                data.add_field('token', AUTHORIZATION)
+                data.add_field('clientId', clientId)
                 data.add_field('file', file, filename=os.path.basename(file_path))
                 data.add_field('segment', str(segment_number))
                 async with session.post(self.server_url, data=data, headers={'Authorization': AUTHORIZATION}) as response:
