@@ -54,7 +54,8 @@ class AudioSender:
                         print(f"Segment {segment_number} sent asynchronously")
                         response_json = await response.json()
                         if response.status == 200:
-                            transcription = response_json.get('transcription', 'No transcription found')
+                            reply_data = response_json.get('replyData', {})
+                            transcription = reply_data.get('translated_text', 'No transcription found')
                             self.logger.info(f"Transcription: {transcription}")
                         else:
                             error_message = response_json.get('error', 'Unknown error')
