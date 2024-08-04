@@ -78,6 +78,13 @@ class AudioSender:
                     try:
                         response_json = await response.json()
                         if response.status == 200:
+                            DELETE_WAV_FILES = int(os.getenv('DELETE_WAV_FILES', 0))
+                            if DELETE_WAV_FILES == 1:
+                                try:
+                                    os.remove(file_path)
+                                    print(f"File {file_path} deleted successfully.")
+                                except OSError as e:
+                                    print(f"Error deleting file {file_path}: {e}")
                             print(f'segment {segment_number} sent successfully in {elapsed_time:.2f} seconds')
                             translated_text = response_json.get('translated_text', None)
                             if isinstance(translated_text, list):

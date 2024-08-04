@@ -6,29 +6,27 @@ import os, time
 from collections import deque
 
 class AudioRecorder:
-    def __init__(self, channels=1, rate=16000, chunk=1024, silence_limit=3, output_filename="output.wav", post_silence_buffer=0.5):
+    def __init__(self, channels=1, rate=16000, chunk=1024, silence_limit=3, post_silence_buffer=0.5):
         self.format = pyaudio.paInt16
         self.channels = channels
         self.rate = rate
         self.chunk = chunk
         self.silence_limit = silence_limit  # Silence limit in seconds
-        self.output_filename = output_filename
         self.audio = pyaudio.PyAudio()
         self.frames = []
         self.silence_frames = deque(maxlen=int(self.silence_limit * self.rate / self.chunk))
         self.post_silence_buffer = post_silence_buffer  # Buffer time in seconds after detecting silence
 
-
-        output_path = os.getenv('OUTPUT_PATH', 'output')
-        if output_path:
-          self.output_filename = os.path.join(output_path, self.output_filename)
-        
     def is_silence(self, snd_data):
         """Check if the given audio chunk is silence."""
         return max(snd_data) < 500  # Adjust this threshold based on your microphone sensitivity
 
-    def record_segment(self):
+    def record_segment(self, segment_number):
         print("Preparing to record...")
+        output_path = os.getenv('OUTPUT_PATH', 'output')        
+        output_filename = f"output_{segment_number}.wav"
+        if output_path:
+          output_filename = os.path.join(output_path, output_filename)
         post_silence_chunks = int(self.post_silence_buffer * self.rate / self.chunk)
         silence_counter = 0        
         self.frames = []
@@ -64,7 +62,6 @@ class AudioRecorder:
         stream.close()
 
         if self.frames:
-            output_filename = f"{self.output_filename}"
             wf = wave.open(output_filename, 'wb')
             wf.setnchannels(self.channels)
             wf.setsampwidth(self.audio.get_sample_size(self.format))
