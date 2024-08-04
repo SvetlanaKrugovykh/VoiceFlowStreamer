@@ -1,4 +1,3 @@
-# src/audio_sender.py
 import logging
 from dotenv import load_dotenv
 import os
@@ -19,7 +18,7 @@ class AudioSender:
         self.logger = logging.getLogger()
 
     async def send_audio(self, file_path, segment_number):
-        THROUGH_AS = int(os.getenv('THROUGH_AS'))     
+        THROUGH_AS = int(os.getenv('THROUGH_AS', 1))
         clientId = os.getenv('CLIENT_ID')
 
         if clientId is None:
@@ -37,7 +36,6 @@ class AudioSender:
 
         if THROUGH_AS == 1:
             AUTHORIZATION = os.getenv('AUTHORIZATION')
-            prod_mode = int(os.getenv('PROD_MODE', 0))
             serviceId = os.getenv('SERVICE_ID')
 
             if AUTHORIZATION is None or serviceId is None:
@@ -47,12 +45,7 @@ class AudioSender:
             data.add_field('serviceId', serviceId)
             data.add_field('token', AUTHORIZATION)
 
-            if prod_mode == 0:
-                ssl_context = ssl.create_default_context()
-                ssl_context.check_hostname = False
-                ssl_context.verify_mode = ssl.CERT_NONE
-            else:
-                ssl_context = ssl.create_default_context()
+            ssl_context = ssl.create_default_context()
 
             connector = aiohttp.TCPConnector(ssl=ssl_context)
             server_url = os.getenv('SERVER_URL')
