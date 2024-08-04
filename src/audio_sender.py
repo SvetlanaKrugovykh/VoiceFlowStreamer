@@ -94,7 +94,7 @@ class AudioSender:
                             else:
                                 transcription = 'No transcription found'
 
-                            self.logger.info(f"Transcription: {transcription}")                        
+                            self.logger.info(f": {transcription}")                        
                         else:
                             error_message = response_json.get('error', 'Unknown error')
                             reason = response_json.get('reason', 'No reason provided')
