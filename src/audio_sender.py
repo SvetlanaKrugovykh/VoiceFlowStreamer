@@ -34,6 +34,8 @@ class AudioSender:
         else:
             data.add_field('file', open(file_path, 'rb'), filename=os.path.basename(file_path))
 
+        headers = {}
+
         if THROUGH_AS == 1:
             AUTHORIZATION = os.getenv('AUTHORIZATION')
             serviceId = os.getenv('SERVICE_ID')
@@ -44,6 +46,7 @@ class AudioSender:
 
             data.add_field('serviceId', serviceId)
             data.add_field('token', AUTHORIZATION)
+            headers['Authorization'] = AUTHORIZATION
 
             ssl_context = ssl.create_default_context()
 
@@ -60,7 +63,7 @@ class AudioSender:
         async with aiohttp.ClientSession(connector=connector) as session:
             try:
                 start_time = time.time()
-                async with session.post(server_url, data=data) as response:
+                async with session.post(server_url, data=data, headers=headers) as response:
                     status_code = response.status
                     end_time = time.time()
                     elapsed_time = end_time - start_time
