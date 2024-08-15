@@ -63,7 +63,8 @@ class AudioSender:
         async with aiohttp.ClientSession(connector=connector) as session:
             try:
                 start_time = time.time()
-                async with session.post(server_url, data=data, headers=headers) as response:
+                timeout = aiohttp.ClientTimeout(total=None)  # No timeout
+                async with session.post(server_url, data=data, headers=headers, timeout=timeout) as response:                    
                     status_code = response.status
                     end_time = time.time()
                     elapsed_time = end_time - start_time
@@ -82,7 +83,12 @@ class AudioSender:
                                 except OSError as e:
                                     print(f"Error deleting file {file_path}: {e}")
                             print(f'segment {segment_number} sent successfully in {elapsed_time:.2f} seconds')
-                            translated_text = response_json.get('translated_text', None)
+
+                            if THROUGH_AS == 0:
+                                translated_text = response_json.get('translated_text', None)
+                            else:
+                                translated_text = response_json.get('replyData', {}).get('translated_text', None)
+
                             if isinstance(translated_text, list):
                                 transcription = next((text for text in translated_text if text), 'No transcription found')
                             elif isinstance(translated_text, str):
