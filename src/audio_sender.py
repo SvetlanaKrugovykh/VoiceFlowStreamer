@@ -1,21 +1,22 @@
-import logging
 from dotenv import load_dotenv
 import os
 import aiohttp
-import asyncio
 import ssl
 import urllib3
 import time
+from .audio_translator import AudioTranslator
+from .logger_setup import setup_logger
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv()
 
+transcriptor_logger = setup_logger('transcriptor', 'transcriptions.log')
 class AudioSender:
     def __init__(self, server_url):
         self.server_url = server_url
-        logging.basicConfig(filename='transcriptions.log', level=logging.INFO, format='%(asctime)s - %(message)s', encoding='utf-8')
-        self.logger = logging.getLogger()
+        self.logger = transcriptor_logger
+        self.translator = AudioTranslator()
 
     async def send_audio(self, file_path, segment_number):
         THROUGH_AS = int(os.getenv('THROUGH_AS', 1))
@@ -97,6 +98,10 @@ class AudioSender:
                                 transcription = 'No transcription found'
 
                             self.logger.info(f": {transcription}")                        
+
+                            if transcription != 'No transcription found':
+                                await self.translator.process_transcription(translated_text, headers)
+
                         else:
                             error_message = response_json.get('error', 'Unknown error')
                             reason = response_json.get('reason', 'No reason provided')

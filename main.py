@@ -1,8 +1,6 @@
 # main.py
-
 from src.audio_recorder import AudioRecorder
 from src.audio_sender import AudioSender
-import time
 import asyncio
 from dotenv import load_dotenv
 import os
