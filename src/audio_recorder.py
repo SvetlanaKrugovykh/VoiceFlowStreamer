@@ -3,12 +3,12 @@ import pyaudio
 import noisereduce as nr
 import numpy as np
 import wave
-import os, time
-from collections import deque
+import os
 import time
+from collections import deque
 
 class AudioRecorder:
-    def __init__(self, channels=1, rate=16000, chunk=1024, silence_limit=2, post_silence_buffer=0.5, max_segment_duration=60):
+    def __init__(self, channels=1, rate=16000, chunk=1024, silence_limit=2, post_silence_buffer=0.5, max_segment_duration=30, silence_threshold=500):
         self.format = pyaudio.paInt16
         self.channels = channels
         self.rate = rate
@@ -19,23 +19,23 @@ class AudioRecorder:
         self.silence_frames = deque(maxlen=int(self.silence_limit * self.rate / self.chunk))
         self.post_silence_buffer = post_silence_buffer 
         self.max_segment_duration = max_segment_duration # Buffer time in seconds after detecting silence
+        self.silence_threshold = silence_threshold  # Threshold for silence detection
 
     def is_silence(self, snd_data):
         reduced_noise = nr.reduce_noise(y=snd_data, sr=self.rate)
-        return max(reduced_noise) < 1000  # Use reduced noise for silence detection
+        return max(reduced_noise) < self.silence_threshold  # Use reduced noise for silence detection
 
     def record_segment(self, segment_number):
         print("Preparing to record...")
         output_path = os.getenv('OUTPUT_PATH', 'output')        
         output_filename = f"output_{segment_number}.wav"
         if output_path:
-          output_filename = os.path.join(output_path, output_filename)
+            output_filename = os.path.join(output_path, output_filename)
         post_silence_chunks = int(self.post_silence_buffer * self.rate / self.chunk)
-        silence_counter = 0        
         self.frames = []
         self.silence_frames.clear()  # Ensure silence_frames is cleared at the start
         if not 8000 <= self.rate <= 48000:
-          raise ValueError(f"Rate {self.rate} is out of acceptable range (8000-48000)")
+            raise ValueError(f"Rate {self.rate} is out of acceptable range (8000-48000)")
 
         print('self.rate', self.rate)
         stream = self.audio.open(format=self.format, channels=self.channels, rate=self.rate, input=True, frames_per_buffer=self.chunk)
@@ -56,8 +56,10 @@ class AudioRecorder:
             else:
                 if is_speech_detected:
                     self.silence_frames.append(1)
-                    silence_counter += 1
                     if len(self.silence_frames) == self.silence_frames.maxlen:
+                        for _ in range(post_silence_chunks):
+                            data = stream.read(self.chunk, exception_on_overflow=False)
+                            self.frames.append(data)
                         break
                     else:
                         self.frames.append(data)  
@@ -82,4 +84,13 @@ class AudioRecorder:
             print("No speech detected.")
             return None
 
-    
+    def record(self):
+        segment_number = 1
+        while True:
+            output_filename = self.record_segment(segment_number)
+            if output_filename:
+                print(f"Segment {segment_number} saved as {output_filename}")
+                segment_number += 1
+            else:
+                print("No more segments to record.")
+                break
